@@ -11,13 +11,11 @@ import java.time.{ ZoneId, ZonedDateTime }
   */
 object DocumentConverter {
 
-  private val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
+  private lazy val timeFormatter: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS")
 
   def fctToDocument(fct: StationFct): Document = {
-    val fetchedTimeUTC    = fct.timestampFetched.withZoneSameInstant(ZoneId.of("UTC"))
-    val srcUpdatedTimeUTC = fct.timestampSrcUpdated.withZoneSameInstant(ZoneId.of("UTC"))
-    val fetchedTimeStr    = fetchedTimeUTC.format(timeFormatter)
-    val srcUpdatedTimeStr = srcUpdatedTimeUTC.format(timeFormatter)
+    val fetchedTimeStr    = formatZonedDateTime(fct.timestampFetched)
+    val srcUpdatedTimeStr = formatZonedDateTime(fct.timestampSrcUpdated)
     new Document()
       .append(DocFields.Fct.STATION_ID, BsonInt32(fct.stationId))
       .append(DocFields.Fct.TIMESTAMP_FETCHED, fetchedTimeStr)
@@ -29,14 +27,9 @@ object DocumentConverter {
   }
 
   def dimToDocument(dim: StationDim, metadata: SCDMetadata): Document = {
-    val updatedTimeUTC   = dim.timestampUpdated.withZoneSameInstant(ZoneId.of("UTC"))
-    val effectiveFromUTC = metadata.effectiveFrom.withZoneSameInstant(ZoneId.of("UTC"))
-
-    val updatedTimeStr   = updatedTimeUTC.format(timeFormatter)
-    val effectiveFromStr = effectiveFromUTC.format(timeFormatter)
-    val effectiveToStr   = metadata.effectiveTo
-      .map(time => time.withZoneSameInstant(ZoneId.of("UTC")).format(timeFormatter))
-      .orNull
+    val updatedTimeStr   = formatZonedDateTime(dim.timestampUpdated)
+    val effectiveFromStr = formatZonedDateTime(metadata.effectiveFrom)
+    val effectiveToStr   = metadata.effectiveTo.map(time => formatZonedDateTime(time)).orNull
 
     new Document()
       .append(DocFields.Dim.TIMESTAMP_UPDATED, updatedTimeStr)
@@ -61,6 +54,7 @@ object DocumentConverter {
       timestampUpdatedStr,
       DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS").withZone(ZoneId.of("UTC"))
     )
+    
     StationDim(
       timestampUpdated = timestampUpdated,
       stationId = doc.getInteger(DocFields.Dim.STATION_ID),
@@ -92,4 +86,7 @@ object DocumentConverter {
 
     SCDMetadata(effectiveFrom, effectiveTo, doc.getBoolean(DocFields.Metadata.IS_CURRENT))
   }
+
+  private def formatZonedDateTime(time: ZonedDateTime): String =
+    time.withZoneSameInstant(ZoneId.of("UTC")).format(timeFormatter)
 }
