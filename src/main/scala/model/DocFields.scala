@@ -2,8 +2,6 @@ package model
 
 object DocFields {
 
-  val ID = "_id"
-
   object Dim {
     val TIMESTAMP_UPDATED = "timestamp_updated"
     val STATION_ID        = "station_id"
@@ -15,7 +13,7 @@ object DocFields {
     val LONGITUDE         = "longitude"
     val TOTAL_DOCKS       = "total_docks"
     val DISTRICT_ZH       = "district_zh"
-    val IS_ACTIVE         = "isActive"
+    val IS_ACTIVE         = "is_active"
   }
 
   object Fct {
